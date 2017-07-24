@@ -7,11 +7,10 @@ go:
 before_install:
   - go get ./...
   - go get gopkg.in/alecthomas/gometalinter.v1
-  - go install gopkg.in/alecthomas/gometalinter.v1
-  - gometalinter --install
+  - gometalinter.v1 --install
 
 script:
-  - gometalinter --config=gometalinter-ci.json ./...
+  - gometalinter.v1 --config=gometalinter-ci.json ./...
   - go test -v -race ./...
 
 after_success:
