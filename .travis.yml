@@ -6,6 +6,7 @@ go:
 
 before_install:
   - go get ./...
+  - go get gopkg.in/alecthomas/gometalinter.v1
   - go install gopkg.in/alecthomas/gometalinter.v1
   - gometalinter --install
 
