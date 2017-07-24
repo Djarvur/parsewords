@@ -6,6 +6,8 @@ go:
 
 before_install:
   - go get ./...
+  - go get gopkg.in/alecthomas/gometalinter.v1
+  - gometalinter --install
 
 script:
   - gometalinter --config=gometalinter-ci.json ./...
