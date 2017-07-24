@@ -1,0 +1,15 @@
+language: go
+
+go:
+  - 1.8
+  - tip
+
+before_install:
+  - go get ./...
+
+script:
+  - gometalinter --config=gometalinter-ci.json ./...
+  - go test -v -race ./...
+
+after_success:
+  - test "$TRAVIS_GO_VERSION" = "1.8" && goveralls -service=travis-ci

@@ -1,0 +1,16 @@
+{
+  "Disable": [
+    "gotype"
+  ],
+  "Vendor": true,
+  "Concurrency": 8,
+  "Deadline": "15m",
+  "Skip": [
+  	"gen"
+  ],
+  "Sort": [
+  	"path",
+  	"line",
+  	"linter"
+  ]
+}
