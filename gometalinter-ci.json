@@ -12,5 +12,8 @@
   	"path",
   	"line",
   	"linter"
+  ],
+  "Exclude": [
+    "cyclomatic complexity \\d+ of function enumerateQuotes\\(\\) is high \\(> \\d+\\) \\(gocyclo\\)$"
   ]
 }
