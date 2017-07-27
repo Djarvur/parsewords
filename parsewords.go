@@ -29,31 +29,33 @@ const (
 )
 
 var (
-	unslashRegexp  = regexp.MustCompile(`(?s:\\(.))`)
-	unslashReplace = `$1`
+	unslashRegexp    = regexp.MustCompile(`(?s:\\(.))`)
+	unslashReplace   = `$1`
+	trimLeftRegexp   = regexp.MustCompile(`^\s+`)
+	trimLeftReplace  = ``
+	trimRightRegexp  = regexp.MustCompile(`((?:\\\s)|(?:[^\\]))\s+$`)
+	trimRightReplace = `$1`
 )
 
 // Shellwords is written as a special case of &quotewords(), and it
 // does token parsing with whitespace as a delimiter-- similar to most
 // Unix shells.
 func Shellwords(lines ...string) ([]string, error) {
-	allwords := make([]string, 0, len(lines))
+	wholeLine := trimRightRegexp.ReplaceAllString(
+		trimLeftRegexp.ReplaceAllString(
+			strings.Join(lines, ""),
+			trimLeftReplace,
+		),
+		trimRightReplace,
+	)
 
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		words, err := ParseLine(`\s+`, KeepNothing, line)
-		if err != nil {
-			return nil, err
-		}
+	if len(wholeLine) == 0 {
+		return nil, nil
+	}
 
-		if len(words) > 0 && words[len(words)-1] == "" {
-			words = words[:len(words)-1]
-		}
-
-		if !(len(words) > 0 || len(line) == 0) {
-			return nil, nil
-		}
-		allwords = append(allwords, words...)
+	allwords, err := ParseLine(`\s+`, KeepNothing, wholeLine)
+	if err != nil {
+		return nil, err
 	}
 
 	return allwords, nil
@@ -101,10 +103,12 @@ func unquote(str string) string {
 		if len(str) > 2 {
 			return str[1 : len(str)-1]
 		}
+		return ""
 	case str[0] == '"':
 		if len(str) > 2 {
 			return unslashRegexp.ReplaceAllString(str[1:len(str)-1], unslashReplace)
 		}
+		return ""
 	}
 
 	return unslashRegexp.ReplaceAllString(str, unslashReplace)
@@ -123,10 +127,6 @@ func Quotewords(delimiter string, keep keepType, lines ...string) ([]string, err
 		words, err := ParseLine(delimiter, keep, line)
 		if err != nil {
 			return nil, err
-		}
-
-		if len(words) > 0 && words[len(words)-1] == "" {
-			words = words[:len(words)-1]
 		}
 
 		if !(len(words) > 0 || len(line) == 0) {
@@ -278,6 +278,10 @@ func enumerateWords(
 
 	if curPos < len(line) {
 		words = append(words, delimitedWordNew(substring{curPos, len(line)}, badSubstring))
+	} else {
+		if len(delimiters) > 0 && delimiters[len(delimiters)-1].off == len(line) {
+			words = append(words, delimitedWordNew(substring{len(line), len(line)}, badSubstring))
+		}
 	}
 
 	return words
@@ -295,7 +299,7 @@ func enumerateDelimiters(
 
 	for _, match := range matches {
 		delimeter := checkDelimiter(line, quoted, slashed, delimiting, substring{match[0], match[1]})
-		if delimeter.on > 0 {
+		if delimeter.on >= 0 {
 			delimiters = append(delimiters, delimeter)
 		}
 	}
@@ -321,7 +325,7 @@ func checkDelimiter(
 	for _, slash := range slashed {
 		if delimiter.on == slash {
 			delimiter.on++
-			if delimiting.MatchString(line[delimiter.on:delimiter.off]) {
+			if delimiter.on < delimiter.off && delimiting.MatchString(line[delimiter.on:delimiter.off]) {
 				return delimiter
 			}
 			return badSubstring

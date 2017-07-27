@@ -34,14 +34,10 @@ func isInt(t *testing.T, got int, expected int) {
 	}
 }
 
-func qq(words ...string) string {
-	return strings.Join(words, " ")
-}
-
 func TestShellwords(t *testing.T) {
-	words, err := parsewords.Shellwords(qq(`foo`, `"bar quiz"`, `zoo`))
+	words, err := parsewords.Shellwords(`foo "bar quiz" zoo`)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	is(t, words[0], `foo`)
@@ -53,20 +49,20 @@ func TestQuotewords(t *testing.T) {
 	// Test quotewords() with other parameters and null last field
 	words, err := parsewords.Quotewords(`:+`, parsewords.KeepQuotes, `foo:::"bar:foo":zoo zoo:`)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	is(t, strings.Join(words, ";"), `foo;"bar:foo";zoo zoo`)
+	is(t, strings.Join(words, ";"), `foo;"bar:foo";zoo zoo;`)
 }
 
 func TestQuotewordsDelimiters(t *testing.T) {
 	// Test $keep eq 'delimiters' and last field zero
 	words, err := parsewords.Quotewords(`\s+`, parsewords.KeepDelimiters, `4 3 2 1 0`)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	is(t, strings.Join(words, ";"), qq(`4;`, `;3;`, `;2;`, `;1;`, `;0`))
+	is(t, strings.Join(words, ";"), `4; ;3; ;2; ;1; ;0`)
 }
 
 // Big ol' nasty test (thanks, Joerk!)
@@ -78,7 +74,7 @@ func TestParseLineEscapedKeepQuotes(t *testing.T) {
 	// First with $keep == 1
 	words, err := parsewords.ParseLine(`\s+`, parsewords.KeepQuotes, str)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	is(t, strings.Join(words, `|`), `aaaa"bbbbb"|cc\ cc|\\\"dddd" eee\\\"ffff"|"gg"`)
@@ -90,7 +86,7 @@ func TestParseLineEscapedKeepNothing(t *testing.T) {
 	// Now, $keep == 0
 	words, err := parsewords.ParseLine(`\s+`, parsewords.KeepNothing, str)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	is(t, strings.Join(words, `|`), `aaaabbbbb|cc cc|\"dddd eee\"ffff|gg`)
@@ -103,7 +99,7 @@ func TestParseLineSinglequote(t *testing.T) {
 
 	words, err := parsewords.ParseLine(`\s+`, parsewords.KeepNothing, str)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	is(t, strings.Join(words, `|`), `aaaabbbbb|cc cc|\"dddd\ eee\\\"ffff\|gg`)
@@ -113,7 +109,7 @@ func TestNestedQuotewords(t *testing.T) {
 	// Make sure @nested_quotewords does the right thing
 	words, err := parsewords.NestedQuotewords(`\s+`, parsewords.KeepNothing, `a b c`, `1 2 3`, `x y z`)
 	if err != nil {
-		t.Fatalf("Unexpected eror: %v", err)
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
 	isInt(t, len(words), 3)
@@ -149,72 +145,133 @@ func TestShellwordsError(t *testing.T) {
 	if len(words) > 0 {
 		t.Errorf("Empty result expected but %d elements received", len(words))
 	}
+
+	lines, err := parsewords.NestedQuotewords(`s+`, parsewords.KeepNothing, str)
+	if err == nil {
+		t.Errorf("Error expected but not received")
+	}
+	if len(lines) > 0 {
+		t.Errorf("Empty result expected but %d elements received", len(words))
+	}
 }
 
-// @words = parse_line('s+', 0, $string);
-// is(@words, 0);
-//
-// @words = quotewords('s+', 0, $string);
-// is(@words, 0);
-//
-// {
-//   # Gonna get some more undefined things back
-//   no warnings 'uninitialized' ;
-//
-//   @words = nested_quotewords('s+', 0, $string);
-//   is(@words, 0);
-//
-//   # Now test empty fields
-//   $result = join('|', parse_line(':', 0, 'foo::0:"":::'));
-//   is($result, 'foo||0||||');
-//
-//   # Test for 0 in quotes without $keep
-//   $result = join('|', parse_line(':', 0, ':"0":'));
-//   is($result, '|0|');
-//
-//   # Test for \001 in quoted string
-//   $result = join('|', parse_line(':', 0, ':"' . "\001" . '":'));
-//   is($result, "|\1|");
-//
-// }
-//
-// # Now test perlish single quote behavior
-// $Text::ParseWords::PERL_SINGLE_QUOTE = 1;
-// $string = 'aaaa"bbbbb" cc\ cc \\\\\"dddd\' eee\\\\\"\\\'ffff\' gg';
-// $result = join('|', parse_line('\s+', 0, $string));
-// is($result, 'aaaabbbbb|cc cc|\"dddd eee\\\\"\'ffff|gg');
-//
-// # test whitespace in the delimiters
-// @words = quotewords(' ', 1, '4 3 2 1 0');
-// is(join(";", @words), qq(4;3;2;1;0));
-//
-// # [perl #30442] Text::ParseWords does not handle backslashed newline inside quoted text
-// $string = qq{"field1"	"field2\\\nstill field2"	"field3"};
-//
-// $result = join('|', parse_line("\t", 1, $string));
-// is($result, qq{"field1"|"field2\\\nstill field2"|"field3"});
-//
-// $result = join('|', parse_line("\t", 0, $string));
-// is($result, "field1|field2\nstill field2|field3");
-//
-// SKIP: { # unicode
-//   skip "No unicode",1 if $]<5.008;
-//   $string = qq{"field1"\x{1234}"field2\\\x{1234}still field2"\x{1234}"field3"};
-//   $result = join('|', parse_line("\x{1234}", 0, $string));
-//   is($result, "field1|field2\x{1234}still field2|field3",'Unicode');
-// }
-//
+func TestEmptyFields(t *testing.T) {
+	// Now test empty fields
+	result, err := parsewords.ParseLine(":", parsewords.KeepNothing, `foo::0:"":::`)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), `foo||0||||`)
+}
+
+func TestQuotedZero(t *testing.T) {
+	// Test for 0 in quotes without $keep
+	result, err := parsewords.ParseLine(":", parsewords.KeepNothing, `:"0":`)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), `|0|`)
+}
+
+func TestQuotedOne(t *testing.T) {
+	// Test for \001 in quoted string
+	result, err := parsewords.ParseLine(":", parsewords.KeepNothing, `:"`+"\001"+`":`)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), `|`+"\001"+`|`)
+}
+
+func TestPerlishSingleQuote(t *testing.T) {
+	t.Skip("skipping unclear test.")
+	// Now test perlish single quote behavior
+	str := `aaaa"bbbbb" cc\ cc \\\\\"dddd\' eee\\\\\"\\\'ffff\' gg`
+	result, err := parsewords.Quotewords(" ", parsewords.KeepNothing, str)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), `aaaabbbbb|cc cc|\"dddd eee\\\\"\'ffff|gg`)
+}
+
+func TestWhitespaceDelimiter(t *testing.T) {
+	// test whitespace in the delimiters
+	result, err := parsewords.Quotewords(" ", parsewords.KeepQuotes, `4 3 2 1 0`)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, ";"), `4;3;2;1;0`)
+}
+
+func TestNewlineInsideQuotes(t *testing.T) {
+	// [perl #30442] Text::ParseWords does not handle backslashed newline inside quoted text
+	str := `"field1"	"field2` + "\n" + `still field2"	"field3"`
+
+	result, err := parsewords.ParseLine("\t", parsewords.KeepQuotes, str)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), `"field1"|"field2`+"\n"+`still field2"|"field3"`)
+
+	result, err = parsewords.ParseLine("\t", parsewords.KeepNothing, str)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), `field1|field2`+"\n"+`still field2|field3`)
+}
+
+func TestUnicode(t *testing.T) {
+	// unicode
+	str := "field1\u1234field2\\\u1234still field2\u1234field3"
+
+	result, err := parsewords.ParseLine("\u1234", parsewords.KeepNothing, str)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), "field1|field2\u1234still field2|field3")
+}
+
+// Not relevant for Go
 // # missing quote after matching regex used to hang after change #22997
 // "1234" =~ /(1)(2)(3)(4)/;
 // $string = qq{"missing quote};
 // $result = join('|', shellwords($string));
 // is($result, "");
 //
-// # make sure shellwords strips out leading whitespace and trailng undefs
-// # from parse_line, so it's behavior is more like /bin/sh
-// $result = join('|', shellwords(" aa \\  \\ bb ", " \\  ", "cc dd ee\\ "));
-// is($result, "aa| | bb| |cc|dd|ee ");
-//
+
+func TestShellwordsStrip(t *testing.T) {
+	// make sure shellwords strips out leading whitespace and trailng undefs
+	// from parse_line, so it's behavior is more like /bin/sh
+	result, err := parsewords.Shellwords(` aa \  \ bb `, ` \  `, `cc dd ee\ `)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), "aa| | bb| |cc|dd|ee ")
+
+	result, err = parsewords.Shellwords(` aa \  \ bb `, ` \  `, `cc dd ee\  `)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), "aa| | bb| |cc|dd|ee ")
+
+	result, err = parsewords.Shellwords(` aa \  \ bb `, ` \  `, `cc dd ee `)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	is(t, strings.Join(result, "|"), "aa| | bb| |cc|dd|ee")
+}
+
+// Not relevant for Go
 // $SIG{ALRM} = sub {die "Timeout!"};
 // alarm(3);
 // @words = Text::ParseWords::old_shellwords("foo\\");
