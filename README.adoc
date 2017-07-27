@@ -13,7 +13,7 @@ All the tests supplied with `Text::ParseWords` are implemented and passed.
 curl https://tools.ietf.org/rfc/rfc3501.txt > bench/bench.txt
 
 $wc bench/bench.txt
-    6051   28059  227639 test.txt
+    6051   28059  227639 bench/bench.txt
 
 $perl bench/bench.pl < bench/bench.txt
 100 iterations done in 9.986882s: 6604 words found in 227639 bytes of input
