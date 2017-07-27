@@ -24,9 +24,9 @@ type keepType int
 // tokens in the token lists, in addition to preserving quote and
 // backslash characters.
 const (
-	KeepNothing = iota
-	KeepQuotes
-	KeepDelimiters
+	KeepNothing    keepType = 0
+	KeepQuotes     keepType = 1
+	KeepDelimiters keepType = 2
 )
 
 var (
