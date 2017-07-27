@@ -18,7 +18,7 @@ $wc bench/bench.txt
 $perl bench/bench.pl < bench/bench.txt
 100 iterations done in 9.986882s: 6604 words found in 227639 bytes of input
 
-$go run bench/bench.go  < bench/bench.txt
+$go run bench/bench.go < bench/bench.txt
 100 iterations done in 6.572298304s: 6604 words found in 227639 bytes of input
 ```
 
