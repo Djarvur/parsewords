@@ -28,7 +28,7 @@ func main() {
 			panic(err)
 		}
 	}
-	spent := time.Now().Sub(started)
+	spent := time.Since(started)
 
 	fmt.Printf(
 		"%d iterations done in %v: %d words found in %d bytes of input\n",

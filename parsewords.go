@@ -1,3 +1,4 @@
+// Package parsewords - parse text into an array of tokens or array of arrays
 package parsewords
 
 import (
