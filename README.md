@@ -1,11 +1,11 @@
-# parsewords
+# parsewords image:https://godoc.org/github.com/Djarvur/parsewords?status.svg["GoDoc",link="http://godoc.org/github.com/Djarvur/parsewords"] image:https://travis-ci.org/Djarvur/parsewords.svg["Build Status",link="https://travis-ci.org/Djarvur/parsewords"] image:https://coveralls.io/repos/Djarvur/parsewords/badge.svg?branch=master&service=github["Coverage Status",link="https://coveralls.io/github/Djarvur/parsewords?branch=master"]
 
-Golang package based on CPAN Text::ParseWords module
+Golang package based on [CPAN Text::ParseWords](http://search.cpan.org/~chorny/Text-ParseWords-3.30/lib/Text/ParseWords.pm) module.
 
 Go regexps are little bit less powerfull than Perl,
 so parser is little bit more complicated inside.
 
-Al the tests supplied with `Text::ParseWords` areimplemented and passed.
+All the tests supplied with `Text::ParseWords` are implemented and passed.
 
 ## Benchmark
 
