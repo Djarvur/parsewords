@@ -5,7 +5,9 @@ go:
   - tip
 
 before_install:
-  - go get ./...
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
   - go get gopkg.in/alecthomas/gometalinter.v1
   - gometalinter.v1 --install
 
