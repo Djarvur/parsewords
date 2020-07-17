@@ -2,6 +2,7 @@
 package parsewords
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -29,13 +30,18 @@ const (
 	KeepDelimiters keepType = 2
 )
 
+// Errors might be returned.
 var (
-	unslashRegexp    = regexp.MustCompile(`(?s:\\(.))`)
-	unslashReplace   = `$1`
-	trimLeftRegexp   = regexp.MustCompile(`^\s+`)
-	trimLeftReplace  = ``
-	trimRightRegexp  = regexp.MustCompile(`((?:\\\s)|(?:[^\\]))\s+$`)
-	trimRightReplace = `$1`
+	ErrQuoteUnclosed = errors.New("quote unclosed")
+)
+
+var (
+	unslashRegexp    = regexp.MustCompile(`(?s:\\(.))`)               // nolint: gochecknoglobals
+	unslashReplace   = `$1`                                           // nolint: gochecknoglobals
+	trimLeftRegexp   = regexp.MustCompile(`^\s+`)                     // nolint: gochecknoglobals
+	trimLeftReplace  = ``                                             // nolint: gochecknoglobals
+	trimRightRegexp  = regexp.MustCompile(`((?:\\\s)|(?:[^\\]))\s+$`) // nolint: gochecknoglobals
+	trimRightReplace = `$1`                                           // nolint: gochecknoglobals
 )
 
 // Shellwords is written as a special case of &quotewords(), and it
@@ -75,6 +81,7 @@ func ParseLine(delimiter string, keep keepType, line string) ([]string, error) {
 	}
 
 	pieces := make([]string, 0, len(words))
+
 	for _, word := range words {
 		piece := ""
 
@@ -83,6 +90,7 @@ func ParseLine(delimiter string, keep keepType, line string) ([]string, error) {
 			if keep == KeepNothing {
 				str = unquote(str)
 			}
+
 			piece += str
 		}
 
@@ -101,14 +109,16 @@ func unquote(str string) string {
 	case len(str) == 0:
 		return ""
 	case str[0] == '\'':
-		if len(str) > 2 {
+		if len(str) > 2 { // nolint: gomnd
 			return str[1 : len(str)-1]
 		}
+
 		return ""
 	case str[0] == '"':
-		if len(str) > 2 {
+		if len(str) > 2 { // nolint: gomnd
 			return unslashRegexp.ReplaceAllString(str[1:len(str)-1], unslashReplace)
 		}
+
 		return ""
 	}
 
@@ -133,6 +143,7 @@ func Quotewords(delimiter string, keep keepType, lines ...string) ([]string, err
 		if !(len(words) > 0 || len(line) == 0) {
 			return nil, nil
 		}
+
 		allwords = append(allwords, words...)
 	}
 
@@ -161,6 +172,7 @@ func NestedQuotewords(delimiter string, keep keepType, lines ...string) ([][]str
 		if !(len(words) > 0 || len(line) == 0) {
 			return nil, nil
 		}
+
 		allwords = append(allwords, words)
 	}
 
@@ -179,8 +191,8 @@ type delimitedWord struct {
 
 func delimitedWordNew(token substring, delimiter substring) delimitedWord {
 	return delimitedWord{
-		[]substring{token},
-		badSubstring,
+		tokens:    []substring{token},
+		delimiter: delimiter,
 	}
 }
 
@@ -199,7 +211,7 @@ func smartSplit(delimiting *regexp.Regexp, line string) ([]delimitedWord, error)
 	return enumerateWords(line, delimiters, quoted), nil
 }
 
-func enumerateQuotes(line string) ([]substring, []int, error) {
+func enumerateQuotes(line string) ([]substring, []int, error) { // nolint: gocyclo
 	quoted := make([]substring, 0, 10)
 	slashed := make([]int, 0, 10)
 
@@ -211,6 +223,7 @@ func enumerateQuotes(line string) ([]substring, []int, error) {
 		if slashOn && sqOn < 0 {
 			slashed = append(slashed, ri)
 		}
+
 		switch {
 		case sym == '\\':
 			slashOn = !slashOn
@@ -232,10 +245,11 @@ func enumerateQuotes(line string) ([]substring, []int, error) {
 	}
 
 	if sqOn >= 0 {
-		return nil, nil, fmt.Errorf("Single quote unclosed: %d", sqOn)
+		return nil, nil, fmt.Errorf("single quote unclosed: %d: %w", sqOn, ErrQuoteUnclosed)
 	}
+
 	if dqOn >= 0 {
-		return nil, nil, fmt.Errorf("Double quote unclosed: %d", dqOn)
+		return nil, nil, fmt.Errorf("double quote unclosed: %d: %w", sqOn, ErrQuoteUnclosed)
 	}
 
 	return quoted, slashed, nil
@@ -249,6 +263,7 @@ func enumerateWords(
 	words := make([]delimitedWord, 0, len(delimiters))
 	curPos := 0
 	curQuoted := 0
+
 	for _, delimiter := range delimiters {
 		word := delimitedWord{make([]substring, 0, 1), badSubstring}
 
@@ -258,12 +273,14 @@ func enumerateWords(
 					word.tokens = append(word.tokens, quoted[curQuoted])
 					curPos = quoted[curQuoted].off
 					curQuoted++
+
 					continue
 				}
 
 				if delimiter.on > quoted[curQuoted].on {
 					word.tokens = append(word.tokens, substring{curPos, quoted[curQuoted].on})
 					curPos = quoted[curQuoted].on
+
 					continue
 				}
 			}
@@ -277,16 +294,14 @@ func enumerateWords(
 		words = append(words, word)
 	}
 
-	if curPos < len(line) {
+	switch {
+	case curPos < len(line):
 		words = append(words, delimitedWordNew(substring{curPos, len(line)}, badSubstring))
-	} else {
-		if len(delimiters) > 0 && delimiters[len(delimiters)-1].off == len(line) {
-			words = append(words, delimitedWordNew(substring{len(line), len(line)}, badSubstring))
-		}
+	case len(delimiters) > 0 && delimiters[len(delimiters)-1].off == len(line):
+		words = append(words, delimitedWordNew(substring{len(line), len(line)}, badSubstring))
 	}
 
 	return words
-
 }
 
 func enumerateDelimiters(
@@ -308,7 +323,7 @@ func enumerateDelimiters(
 	return delimiters
 }
 
-var badSubstring = substring{-1, -1}
+var badSubstring = substring{on: -1, off: -1} // nolint: gochecknoglobals
 
 func checkDelimiter(
 	line string,
@@ -329,6 +344,7 @@ func checkDelimiter(
 			if delimiter.on < delimiter.off && delimiting.MatchString(line[delimiter.on:delimiter.off]) {
 				return delimiter
 			}
+
 			return badSubstring
 		}
 	}
