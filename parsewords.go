@@ -75,6 +75,11 @@ func ParseLine(delimiter string, keep keepType, line string) ([]string, error) {
 		return nil, err
 	}
 
+	return ParseLinePrecompiled(delimiting, keep, line)
+}
+
+// ParseLinePrecompiled does tokenizing on a single string using provided regular expression as a delimiter.
+func ParseLinePrecompiled(delimiting *regexp.Regexp, keep keepType, line string) ([]string, error) {
 	words, err := smartSplit(delimiting, line)
 	if len(words) == 0 || err != nil {
 		return nil, err
@@ -132,10 +137,25 @@ func unquote(str string) string {
 // returns all of the tokens in a single long list, while NestedQuotewords()
 // returns a list of token lists corresponding to the elements of lines[].
 func Quotewords(delimiter string, keep keepType, lines ...string) ([]string, error) {
+	delimiting, err := regexp.Compile(delimiter)
+	if err != nil {
+		return nil, err
+	}
+
+	return QuotewordsPrecompiled(delimiting, keep, lines...)
+}
+
+// Quotewords and NestedQuotewords functions accept a delimiter
+// (which is a regular expression)
+// and a list of lines and then breaks those lines up into a list of
+// words ignoring delimiters that appear inside quotes.  Quotewords()
+// returns all of the tokens in a single long list, while NestedQuotewords()
+// returns a list of token lists corresponding to the elements of lines[].
+func QuotewordsPrecompiled(delimiting *regexp.Regexp, keep keepType, lines ...string) ([]string, error) {
 	allwords := make([]string, 0, len(lines))
 
 	for _, line := range lines {
-		words, err := ParseLine(delimiter, keep, line)
+		words, err := ParseLinePrecompiled(delimiting, keep, line)
 		if err != nil {
 			return nil, err
 		}
@@ -157,10 +177,25 @@ func Quotewords(delimiter string, keep keepType, lines ...string) ([]string, err
 // returns all of the tokens in a single long list, while NestedQuotewords()
 // returns a list of token lists corresponding to the elements of lines[].
 func NestedQuotewords(delimiter string, keep keepType, lines ...string) ([][]string, error) {
+	delimiting, err := regexp.Compile(delimiter)
+	if err != nil {
+		return nil, err
+	}
+
+	return NestedQuotewordsPrecompiled(delimiting, keep, lines...)
+}
+
+// NestedQuotewords and Quotewords functions accept a delimiter
+// (which is a regular expression)
+// and a list of lines and then breaks those lines up into a list of
+// words ignoring delimiters that appear inside quotes.  Quotewords()
+// returns all of the tokens in a single long list, while NestedQuotewords()
+// returns a list of token lists corresponding to the elements of lines[].
+func NestedQuotewordsPrecompiled(delimiting *regexp.Regexp, keep keepType, lines ...string) ([][]string, error) {
 	allwords := make([][]string, 0, len(lines))
 
 	for _, line := range lines {
-		words, err := ParseLine(delimiter, keep, line)
+		words, err := ParseLinePrecompiled(delimiting, keep, line)
 		if err != nil {
 			return nil, err
 		}
