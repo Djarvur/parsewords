@@ -145,7 +145,7 @@ func Quotewords(delimiter string, keep keepType, lines ...string) ([]string, err
 	return QuotewordsPrecompiled(delimiting, keep, lines...)
 }
 
-// Quotewords and NestedQuotewords functions accept a delimiter
+// QuotewordsPrecompiled and NestedQuotewordsPrecompiled functions accept a delimiter
 // (which is a regular expression)
 // and a list of lines and then breaks those lines up into a list of
 // words ignoring delimiters that appear inside quotes.  Quotewords()
@@ -185,7 +185,7 @@ func NestedQuotewords(delimiter string, keep keepType, lines ...string) ([][]str
 	return NestedQuotewordsPrecompiled(delimiting, keep, lines...)
 }
 
-// NestedQuotewords and Quotewords functions accept a delimiter
+// NestedQuotewordsPrecompiled and QuotewordsPrecompiled functions accept a delimiter
 // (which is a regular expression)
 // and a list of lines and then breaks those lines up into a list of
 // words ignoring delimiters that appear inside quotes.  Quotewords()
