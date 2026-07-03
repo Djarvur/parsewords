@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
   test:
@@ -26,7 +26,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Check out
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
       - name: go test
         run: go test -v -race -coverprofile=profile.cov ./
       - name: Send coverage
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: stable
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
