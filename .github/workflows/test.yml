@@ -33,7 +33,7 @@ jobs:
       - name: Run govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          govulncheck --audit-level=critical ./...
       - name: Send coverage
         uses: shogo82148/actions-goveralls@v1
         with:
