@@ -33,3 +33,14 @@ jobs:
         uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: profile.cov
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v4
+        with:
+          go-version: stable
+      - uses: actions/checkout@v4
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck --audit-level=critical ./...
